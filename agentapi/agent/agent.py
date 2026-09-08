@@ -100,7 +100,7 @@ class Agent:
                     instance to isolate concurrent conversations.
         """
 
-        active_memory = memory or self.memory
+        active_memory = self.memory if memory is None else memory
         conversation_messages = self._conversation_messages(active_memory, [{"role": "user", "content": message}])
         provider = self._get_provider()
 
