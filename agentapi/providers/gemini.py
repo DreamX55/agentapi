@@ -50,7 +50,25 @@ class GeminiProvider(BaseProvider):
 
         content = self._extract_text(data)
         tool_calls = self._extract_tool_calls(data)
-        return ProviderResponse(content=content, tool_calls=tool_calls, raw_message=data)
+
+        usage: dict[str, int] | None = None
+        raw_usage = data.get("usageMetadata")
+        if isinstance(raw_usage, dict):
+            prompt = int(raw_usage.get("promptTokenCount", 0))
+            completion = int(raw_usage.get("candidatesTokenCount", 0))
+            total = int(raw_usage.get("totalTokenCount", prompt + completion))
+            usage = {
+                "prompt_tokens": prompt,
+                "completion_tokens": completion,
+                "total_tokens": total,
+            }
+
+        return ProviderResponse(
+            content=content,
+            tool_calls=tool_calls,
+            raw_message=data,
+            usage=usage,
+        )
 
     async def stream(
         self,

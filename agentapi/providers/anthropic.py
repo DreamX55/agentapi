@@ -79,7 +79,33 @@ class AnthropicProvider(BaseProvider):
                     arguments=json.dumps(block.input)
                 ))
                 
-        return ProviderResponse(content=content, tool_calls=tool_calls, raw_message=response.model_dump())
+        usage: dict[str, int] | None = None
+        raw_usage = getattr(response, "usage", None)
+        if raw_usage is not None:
+            input_tokens = int(getattr(raw_usage, "input_tokens", 0))
+            output_tokens = int(getattr(raw_usage, "output_tokens", 0))
+            usage = {
+                "prompt_tokens": input_tokens,
+                "completion_tokens": output_tokens,
+                "total_tokens": input_tokens + output_tokens,
+            }
+        elif hasattr(response, "model_dump"):
+            raw_dump = response.model_dump().get("usage")
+            if isinstance(raw_dump, dict):
+                input_tokens = int(raw_dump.get("input_tokens", 0))
+                output_tokens = int(raw_dump.get("output_tokens", 0))
+                usage = {
+                    "prompt_tokens": input_tokens,
+                    "completion_tokens": output_tokens,
+                    "total_tokens": input_tokens + output_tokens,
+                }
+
+        return ProviderResponse(
+            content=content,
+            tool_calls=tool_calls,
+            raw_message=response.model_dump() if hasattr(response, "model_dump") else {},
+            usage=usage,
+        )
 
     async def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None, tool_calling: dict[str, Any] | None = None) -> AsyncIterator[str]:
         system, formatted_messages = self._format_messages(messages)

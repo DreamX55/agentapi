@@ -119,10 +119,23 @@ class OpenAICompatibleProvider(BaseProvider):
             for call in raw_tool_calls
         ]
 
+        usage: dict[str, int] | None = None
+        raw_usage = data.get("usage")
+        if isinstance(raw_usage, dict):
+            prompt = int(raw_usage.get("prompt_tokens", 0))
+            completion = int(raw_usage.get("completion_tokens", 0))
+            total = int(raw_usage.get("total_tokens", prompt + completion))
+            usage = {
+                "prompt_tokens": prompt,
+                "completion_tokens": completion,
+                "total_tokens": total,
+            }
+
         return ProviderResponse(
             content=message.get("content") or "",
             tool_calls=tool_calls,
             raw_message=message,
+            usage=usage,
         )
 
     async def stream(

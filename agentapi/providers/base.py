@@ -23,6 +23,7 @@ class ProviderResponse:
     content: str
     tool_calls: list[ToolCall]
     raw_message: dict[str, Any]
+    usage: dict[str, int] | None = None
 
 
 class BaseProvider(ABC):
