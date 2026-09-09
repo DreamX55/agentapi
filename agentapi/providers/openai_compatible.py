@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator
 import httpx
 
 from agentapi.errors import AgentProviderError, AgentConfigurationError
-from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall
+from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall, safe_int_usage
 
 
 class OpenAICompatibleProvider(BaseProvider):
@@ -122,9 +122,9 @@ class OpenAICompatibleProvider(BaseProvider):
         usage: dict[str, int] | None = None
         raw_usage = data.get("usage")
         if isinstance(raw_usage, dict):
-            prompt = int(raw_usage.get("prompt_tokens", 0))
-            completion = int(raw_usage.get("completion_tokens", 0))
-            total = int(raw_usage.get("total_tokens", prompt + completion))
+            prompt = safe_int_usage(raw_usage.get("prompt_tokens"))
+            completion = safe_int_usage(raw_usage.get("completion_tokens"))
+            total = safe_int_usage(raw_usage.get("total_tokens"), default=prompt + completion)
             usage = {
                 "prompt_tokens": prompt,
                 "completion_tokens": completion,

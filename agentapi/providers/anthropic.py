@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator
 from anthropic import AsyncAnthropic
 
 from agentapi.errors import AgentProviderError
-from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall
+from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall, safe_int_usage
 
 class AnthropicProvider(BaseProvider):
     def __init__(self, api_key: str, model: str) -> None:
@@ -82,22 +82,28 @@ class AnthropicProvider(BaseProvider):
         usage: dict[str, int] | None = None
         raw_usage = getattr(response, "usage", None)
         if raw_usage is not None:
-            input_tokens = int(getattr(raw_usage, "input_tokens", 0))
-            output_tokens = int(getattr(raw_usage, "output_tokens", 0))
+            input_tokens = safe_int_usage(getattr(raw_usage, "input_tokens", 0))
+            output_tokens = safe_int_usage(getattr(raw_usage, "output_tokens", 0))
+            cache_create = safe_int_usage(getattr(raw_usage, "cache_creation_input_tokens", 0))
+            cache_read = safe_int_usage(getattr(raw_usage, "cache_read_input_tokens", 0))
+            prompt_tokens = input_tokens + cache_create + cache_read
             usage = {
-                "prompt_tokens": input_tokens,
+                "prompt_tokens": prompt_tokens,
                 "completion_tokens": output_tokens,
-                "total_tokens": input_tokens + output_tokens,
+                "total_tokens": prompt_tokens + output_tokens,
             }
         elif hasattr(response, "model_dump"):
             raw_dump = response.model_dump().get("usage")
             if isinstance(raw_dump, dict):
-                input_tokens = int(raw_dump.get("input_tokens", 0))
-                output_tokens = int(raw_dump.get("output_tokens", 0))
+                input_tokens = safe_int_usage(raw_dump.get("input_tokens"))
+                output_tokens = safe_int_usage(raw_dump.get("output_tokens"))
+                cache_create = safe_int_usage(raw_dump.get("cache_creation_input_tokens"))
+                cache_read = safe_int_usage(raw_dump.get("cache_read_input_tokens"))
+                prompt_tokens = input_tokens + cache_create + cache_read
                 usage = {
-                    "prompt_tokens": input_tokens,
+                    "prompt_tokens": prompt_tokens,
                     "completion_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
+                    "total_tokens": prompt_tokens + output_tokens,
                 }
 
         return ProviderResponse(

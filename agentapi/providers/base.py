@@ -16,6 +16,16 @@ class ToolCall:
     arguments: str
 
 
+def safe_int_usage(val: Any, default: int = 0) -> int:
+    """Safely coerce value to int, returning default if None or invalid."""
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
+
+
 @dataclass
 class ProviderResponse:
     """Normalized non-stream model response."""

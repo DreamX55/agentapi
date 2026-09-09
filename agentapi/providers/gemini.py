@@ -9,7 +9,7 @@ from typing import Any, AsyncIterator
 import httpx
 
 from agentapi.errors import AgentProviderError, AgentConfigurationError
-from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall
+from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall, safe_int_usage
 
 
 class GeminiProvider(BaseProvider):
@@ -54,9 +54,9 @@ class GeminiProvider(BaseProvider):
         usage: dict[str, int] | None = None
         raw_usage = data.get("usageMetadata")
         if isinstance(raw_usage, dict):
-            prompt = int(raw_usage.get("promptTokenCount", 0))
-            completion = int(raw_usage.get("candidatesTokenCount", 0))
-            total = int(raw_usage.get("totalTokenCount", prompt + completion))
+            prompt = safe_int_usage(raw_usage.get("promptTokenCount"))
+            completion = safe_int_usage(raw_usage.get("candidatesTokenCount"))
+            total = safe_int_usage(raw_usage.get("totalTokenCount"), default=prompt + completion)
             usage = {
                 "prompt_tokens": prompt,
                 "completion_tokens": completion,
