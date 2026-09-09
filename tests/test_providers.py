@@ -217,7 +217,14 @@ def test_anthropic_usage_extraction_with_cache():
             mock_block.type = "text"
             mock_block.text = "Claude response"
 
-            mock_usage = MagicMock()
+            mock_usage = MagicMock(
+                spec=[
+                    "input_tokens",
+                    "output_tokens",
+                    "cache_creation_input_tokens",
+                    "cache_read_input_tokens",
+                ]
+            )
             mock_usage.input_tokens = 40
             mock_usage.output_tokens = 20
             mock_usage.cache_creation_input_tokens = 10

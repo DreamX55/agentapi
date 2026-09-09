@@ -10,9 +10,9 @@ from typing import Any
 class TokenUsage:
     """Token usage tracking for observability."""
 
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
 
 
 def safe_int_usage(val: Any, default: int = 0) -> int:
