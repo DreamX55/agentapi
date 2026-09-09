@@ -247,3 +247,27 @@ def test_anthropic_usage_extraction_with_cache():
             }
 
     asyncio.run(_test())
+
+
+def test_anthropic_usage_missing():
+    async def _test():
+        with patch("agentapi.providers.anthropic.AsyncAnthropic"):
+            provider = AnthropicProvider(api_key="test-key", model="claude-3-5-sonnet-20241022")
+
+            mock_block = MagicMock()
+            mock_block.type = "text"
+            mock_block.text = "Claude response"
+
+            mock_response = MagicMock()
+            mock_response.content = [mock_block]
+            mock_response.usage = None
+
+            provider.client.messages.create = AsyncMock(return_value=mock_response)
+
+            res = await provider.chat([{"role": "user", "content": "Hi"}])
+
+            assert isinstance(res, ProviderResponse)
+            assert res.usage is None
+
+    asyncio.run(_test())
+

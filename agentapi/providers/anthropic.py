@@ -92,19 +92,6 @@ class AnthropicProvider(BaseProvider):
                 "completion_tokens": output_tokens,
                 "total_tokens": prompt_tokens + output_tokens,
             }
-        elif hasattr(response, "model_dump"):
-            raw_dump = response.model_dump().get("usage")
-            if isinstance(raw_dump, dict):
-                input_tokens = safe_int_usage(raw_dump.get("input_tokens"))
-                output_tokens = safe_int_usage(raw_dump.get("output_tokens"))
-                cache_create = safe_int_usage(raw_dump.get("cache_creation_input_tokens"))
-                cache_read = safe_int_usage(raw_dump.get("cache_read_input_tokens"))
-                prompt_tokens = input_tokens + cache_create + cache_read
-                usage = {
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": output_tokens,
-                    "total_tokens": prompt_tokens + output_tokens,
-                }
 
         return ProviderResponse(
             content=content,
