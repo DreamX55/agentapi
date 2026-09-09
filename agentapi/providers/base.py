@@ -16,15 +16,7 @@ class ToolCall:
     arguments: str
 
 
-def safe_int_usage(val: Any, default: int = 0) -> int:
-    """Safely coerce value to int, returning default if None or invalid."""
-    if val is None:
-        return default
-    try:
-        return int(val)
-    except (ValueError, TypeError):
-        return default
-
+from agentapi.observability import TokenUsage
 
 @dataclass
 class ProviderResponse:
@@ -33,7 +25,7 @@ class ProviderResponse:
     content: str
     tool_calls: list[ToolCall]
     raw_message: dict[str, Any]
-    usage: dict[str, int] | None = None
+    usage: TokenUsage | None = None
 
 
 class BaseProvider(ABC):

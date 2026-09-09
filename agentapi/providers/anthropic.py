@@ -5,7 +5,8 @@ from typing import Any, AsyncIterator
 from anthropic import AsyncAnthropic
 
 from agentapi.errors import AgentProviderError
-from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall, safe_int_usage
+from agentapi.providers.base import BaseProvider, ProviderResponse, ToolCall
+from agentapi.observability import TokenUsage, safe_int_usage
 
 class AnthropicProvider(BaseProvider):
     def __init__(self, api_key: str, model: str) -> None:
@@ -79,7 +80,7 @@ class AnthropicProvider(BaseProvider):
                     arguments=json.dumps(block.input)
                 ))
                 
-        usage: dict[str, int] | None = None
+        usage: TokenUsage | None = None
         raw_usage = getattr(response, "usage", None)
         if raw_usage is not None:
             input_tokens = safe_int_usage(getattr(raw_usage, "input_tokens", 0))
@@ -87,11 +88,11 @@ class AnthropicProvider(BaseProvider):
             cache_create = safe_int_usage(getattr(raw_usage, "cache_creation_input_tokens", 0))
             cache_read = safe_int_usage(getattr(raw_usage, "cache_read_input_tokens", 0))
             prompt_tokens = input_tokens + cache_create + cache_read
-            usage = {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": output_tokens,
-                "total_tokens": prompt_tokens + output_tokens,
-            }
+            usage = TokenUsage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=output_tokens,
+                total_tokens=prompt_tokens + output_tokens,
+            )
 
         return ProviderResponse(
             content=content,

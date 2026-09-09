@@ -3,7 +3,8 @@
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from agentapi.providers.base import ProviderResponse, safe_int_usage
+from agentapi.providers.base import ProviderResponse
+from agentapi.observability import TokenUsage, safe_int_usage
 from agentapi.providers.openai_compatible import OpenAICompatibleProvider
 from agentapi.providers.gemini import GeminiProvider
 from agentapi.providers.anthropic import AnthropicProvider
@@ -50,11 +51,11 @@ def test_openai_compatible_usage_extraction():
 
             assert isinstance(res, ProviderResponse)
             assert res.content == "Hello world"
-            assert res.usage == {
-                "prompt_tokens": 15,
-                "completion_tokens": 25,
-                "total_tokens": 40,
-            }
+            assert res.usage == TokenUsage(
+                prompt_tokens=15,
+                completion_tokens=25,
+                total_tokens=40,
+            )
 
     asyncio.run(_test())
 
@@ -92,11 +93,11 @@ def test_openai_compatible_null_usage_keys():
             res = await provider.chat([{"role": "user", "content": "Hi"}])
 
             assert isinstance(res, ProviderResponse)
-            assert res.usage == {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0,
-            }
+            assert res.usage == TokenUsage(
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+            )
 
     asyncio.run(_test())
 
@@ -166,11 +167,11 @@ def test_gemini_usage_extraction():
 
             assert isinstance(res, ProviderResponse)
             assert res.content == "Gemini answer"
-            assert res.usage == {
-                "prompt_tokens": 100,
-                "completion_tokens": 50,
-                "total_tokens": 150,
-            }
+            assert res.usage == TokenUsage(
+                prompt_tokens=100,
+                completion_tokens=50,
+                total_tokens=150,
+            )
 
     asyncio.run(_test())
 
@@ -240,11 +241,11 @@ def test_anthropic_usage_extraction_with_cache():
 
             assert isinstance(res, ProviderResponse)
             assert res.content == "Claude response"
-            assert res.usage == {
-                "prompt_tokens": 55,  # 40 + 10 + 5
-                "completion_tokens": 20,
-                "total_tokens": 75,
-            }
+            assert res.usage == TokenUsage(
+                prompt_tokens=55,  # 40 + 10 + 5
+                completion_tokens=20,
+                total_tokens=75,
+            )
 
     asyncio.run(_test())
 
