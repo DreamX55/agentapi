@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, AsyncIterator
 
+from agentapi.observability import TokenUsage
+
 
 @dataclass
 class ToolCall:
@@ -15,8 +17,6 @@ class ToolCall:
     name: str
     arguments: str
 
-
-from agentapi.observability import TokenUsage
 
 @dataclass
 class ProviderResponse:

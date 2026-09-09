@@ -15,6 +15,7 @@ def test_safe_int_usage():
     assert safe_int_usage("20") == 20
     assert safe_int_usage(None, default=5) == 5
     assert safe_int_usage("invalid", default=0) == 0
+    assert safe_int_usage(float("inf"), default=0) == 0
 
 
 def test_openai_compatible_usage_extraction():

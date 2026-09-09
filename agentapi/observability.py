@@ -21,5 +21,5 @@ def safe_int_usage(val: Any, default: int = 0) -> int:
         return default
     try:
         return int(val)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, OverflowError):
         return default
