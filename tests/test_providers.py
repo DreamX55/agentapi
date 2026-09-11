@@ -3,6 +3,8 @@
 import asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
+import pytest
+
 from agentapi.providers.base import ProviderResponse
 from agentapi.observability import TokenUsage, safe_int_usage
 from agentapi.providers.openai_compatible import OpenAICompatibleProvider
@@ -13,9 +15,40 @@ from agentapi.providers.anthropic import AnthropicProvider
 def test_safe_int_usage():
     assert safe_int_usage(10) == 10
     assert safe_int_usage("20") == 20
+    assert safe_int_usage(15.0) == 15
     assert safe_int_usage(None, default=5) == 5
     assert safe_int_usage("invalid", default=0) == 0
     assert safe_int_usage(float("inf"), default=0) == 0
+    assert safe_int_usage(float("nan"), default=0) == 0
+    assert safe_int_usage(-5, default=0) == 0
+    assert safe_int_usage(True, default=0) == 0
+    assert safe_int_usage(False, default=0) == 0
+
+
+def test_token_usage_model():
+    # Default instantiation
+    usage_default = TokenUsage()
+    assert usage_default.prompt_tokens == 0
+    assert usage_default.completion_tokens == 0
+    assert usage_default.total_tokens == 0
+
+    # Automatic total calculation
+    usage1 = TokenUsage(prompt_tokens=10, completion_tokens=20)
+    assert usage1.prompt_tokens == 10
+    assert usage1.completion_tokens == 20
+    assert usage1.total_tokens == 30
+
+    # Explicit total override
+    usage2 = TokenUsage(prompt_tokens=15, completion_tokens=25, total_tokens=40)
+    assert usage2.prompt_tokens == 15
+    assert usage2.completion_tokens == 25
+    assert usage2.total_tokens == 40
+    assert repr(usage2) == "TokenUsage(prompt_tokens=15, completion_tokens=25, total_tokens=40)"
+
+    # Equality and inequality
+    assert usage2 == TokenUsage(15, 25, 40)
+    assert usage2 != usage1
+    assert usage2 != "not a TokenUsage object"
 
 
 def test_openai_compatible_usage_extraction():
@@ -279,4 +312,3 @@ def test_anthropic_usage_missing():
             assert res.usage is None
 
     asyncio.run(_test())
-

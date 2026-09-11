@@ -80,25 +80,29 @@ class AnthropicProvider(BaseProvider):
                     arguments=json.dumps(block.input)
                 ))
                 
-        usage: TokenUsage | None = None
-        raw_usage = getattr(response, "usage", None)
-        if raw_usage is not None:
-            input_tokens = safe_int_usage(getattr(raw_usage, "input_tokens", 0))
-            output_tokens = safe_int_usage(getattr(raw_usage, "output_tokens", 0))
-            cache_create = safe_int_usage(getattr(raw_usage, "cache_creation_input_tokens", 0))
-            cache_read = safe_int_usage(getattr(raw_usage, "cache_read_input_tokens", 0))
-            prompt_tokens = input_tokens + cache_create + cache_read
-            usage = TokenUsage(
-                prompt_tokens=prompt_tokens,
-                completion_tokens=output_tokens,
-                total_tokens=prompt_tokens + output_tokens,
-            )
+        usage = self._extract_usage(response)
 
         return ProviderResponse(
             content=content,
             tool_calls=tool_calls,
             raw_message=response.model_dump() if hasattr(response, "model_dump") else {},
             usage=usage,
+        )
+
+    def _extract_usage(self, response: Any) -> TokenUsage | None:
+        """Extract and normalize token usage from Anthropic response."""
+        raw_usage = getattr(response, "usage", None)
+        if raw_usage is None:
+            return None
+        input_tokens = safe_int_usage(getattr(raw_usage, "input_tokens", 0))
+        output_tokens = safe_int_usage(getattr(raw_usage, "output_tokens", 0))
+        cache_create = safe_int_usage(getattr(raw_usage, "cache_creation_input_tokens", 0))
+        cache_read = safe_int_usage(getattr(raw_usage, "cache_read_input_tokens", 0))
+        prompt_tokens = input_tokens + cache_create + cache_read
+        return TokenUsage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=output_tokens,
+            total_tokens=prompt_tokens + output_tokens,
         )
 
     async def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None, tool_calling: dict[str, Any] | None = None) -> AsyncIterator[str]:

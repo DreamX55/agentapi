@@ -70,6 +70,20 @@ class OpenAICompatibleProvider(BaseProvider):
             )
         return message
 
+    def _extract_usage(self, data: dict[str, Any]) -> TokenUsage | None:
+        """Extract and normalize token usage from provider response."""
+        raw_usage = data.get("usage")
+        if not isinstance(raw_usage, dict):
+            return None
+        prompt = safe_int_usage(raw_usage.get("prompt_tokens"))
+        completion = safe_int_usage(raw_usage.get("completion_tokens"))
+        total = safe_int_usage(raw_usage.get("total_tokens"), default=prompt + completion)
+        return TokenUsage(
+            prompt_tokens=prompt,
+            completion_tokens=completion,
+            total_tokens=total,
+        )
+
     async def chat(
         self,
         messages: list[dict[str, Any]],
@@ -120,17 +134,7 @@ class OpenAICompatibleProvider(BaseProvider):
             for call in raw_tool_calls
         ]
 
-        usage: TokenUsage | None = None
-        raw_usage = data.get("usage")
-        if isinstance(raw_usage, dict):
-            prompt = safe_int_usage(raw_usage.get("prompt_tokens"))
-            completion = safe_int_usage(raw_usage.get("completion_tokens"))
-            total = safe_int_usage(raw_usage.get("total_tokens"), default=prompt + completion)
-            usage = TokenUsage(
-                prompt_tokens=prompt,
-                completion_tokens=completion,
-                total_tokens=total,
-            )
+        usage = self._extract_usage(data)
 
         return ProviderResponse(
             content=message.get("content") or "",
